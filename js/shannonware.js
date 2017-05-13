@@ -18,8 +18,8 @@ var addIndex, removeIndex;
 function init() {
 	container = document.getElementById( 'container' );
 	scene = new THREE.Scene();
-	camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
-	camera.position.z = 0;	// Originally 50
+	camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000);
+	camera.position.z = 30;	// Originally 50
 	ambientLight = new THREE.AmbientLight( 0x404040 );
 
 	light = new THREE.DirectionalLight( 0xffffff, 0.7 );
@@ -86,6 +86,7 @@ function render() {
 				if ($("#guiSelection").text() != testSubject.name ) { 	//"[[target.name]]"
 					$("#guiSelection").text(testSubject.name);								// "[[target.name]]"
 					testahedron = testSubject; // User indicates the selected solid.
+					camera.lookAt(testahedron.position);
 				}
 
 			break;
@@ -153,7 +154,6 @@ function addPlatonicSolid() {
 	var geoPosition = new THREE.Vector3(0, 0, 0);
 	material.ambient = new THREE.Color(0.5, 0.5, 0.5);
 	console.log("addPlatonicSolid new addIndex: " + addIndex );
-	camera.position.z += 50;
 	// tetrahedron, cube, octahedron, dodecahedron,  icosahedron
 	switch (addIndex) {
 		case 0:
@@ -163,29 +163,29 @@ function addPlatonicSolid() {
 		case 1:
 			geo = new THREE.BoxGeometry(10, 10, 10);
 			//geoPosition = (20, 20, 0);
-			geoPosition.x = 10 ;
-			geoPosition.y = 10 ;
+			geoPosition.x = 20 ;
+			geoPosition.y = 20 ;
 			geo.name = "Cube" ;
 		break;
 		case 2:
 			geo = new THREE.OctahedronGeometry(10);
 			//geoPosition = (20, 20, 0);
-			geoPosition.x = 20 ;
-			geoPosition.y = 20 ;
+			geoPosition.x = 40 ;
+			geoPosition.y = 10 ;
 			geo.name = "Octahedron" ;
 		break;
 		case 3:
 			geo = new THREE.DodecahedronGeometry(10);
 			//geoPosition = (20, 20, 0);
-			geoPosition.x = 30 ;
-			geoPosition.y = 30 ;
+			geoPosition.x = 40 ;
+			geoPosition.y = -10 ;
 			geo.name = "Dodecahedron" ;
 		break;
 		case 4:
 			geo = new THREE.IcosahedronGeometry(10);
 			//geoPosition = (20, 20, 0);
-			geoPosition.x = 40 ;
-			geoPosition.y = 40 ;
+			geoPosition.x = 20 ;
+			geoPosition.y = -20 ;
 			geo.name = "Icosahedron" ;
 		break;
 		default:
@@ -204,6 +204,15 @@ function addPlatonicSolid() {
 	addIndex = (addIndex + 1) % 5;
 	raycastTargets.push(mesh);
 	return mesh;
+}
+
+function removePlatonicSolid() {
+	var removeTarget;
+	if (raycastTargets.length > 0) {
+		removeTarget = raycastTargets.shift();
+		console.log("In removePlatonicSolid, removeTarget.name: " + removeTarget.name);
+		scene.remove(removeTarget);
+	} else console.log("In removePlatonicSolid, no target to remove :0)");
 }
 
 function recalculateGUI() {
@@ -242,6 +251,12 @@ $(function() {
 	$("#addPlatonicSolidButton").click(function() {
 		console.log("addPlatonicSolidButton clicked!");
 		testahedron = addPlatonicSolid();
+		camera.position.z = (raycastTargets.length * 5) + 30;
+	})
+	$("#removePlatonicSolidButton").click(function() {
+		console.log("removePlatonicSolidButton clicked!");
+		removePlatonicSolid();
+		camera.position.z = (raycastTargets.length * 5) + 30;
 	})
 	console.log("div.rotationLabel text: " + $("#rotationLabel").text() + " at end of jQuery.");
 	console.log("End of jQuery reached.");
