@@ -10,7 +10,8 @@ var raycaster, intersects;
 var mouse, INTERSECTED;
 //var showTetrahedronLabel = false;
 //var fire = 3 ;
-var testahedron ; //tetrahedron;
+var testahedron;
+var raycastTargets = new Array();//tetrahedron;
 var addIndex, removeIndex;
 
 
@@ -66,59 +67,38 @@ function render() {
 	animate();
 	raycaster.setFromCamera( mouse, camera );
 	// TypeError: object.raycast is not a function
-	var sceneChildren = "";
-	for (var i = 0 ; i < scene.children.length; i++) {
-		if (scene.children[i].name) {
-			//console.log("Progress!");
-			sceneChildren += scene.children[i].name + ", " ;
-		}
-
-	}
-	//console.log("render() scene.children: " + sceneChildren);
-
-	intersects = raycaster.intersectObject( testahedron ); // scene.children
-	switch (intersects.length) {
-		case 0:
-			if ($("#guiSelection").text() != "Waiting...") {
-				$("#guiSelection").text("Waiting...");
-			}
-
-		break;
-		case 1:
-			if ($("#guiSelection").text() != "[[target.name]]") {
-				$("#guiSelection").text("[[target.name]]");
-			}
-
-		break;
-		default:
-			if ($("#guiSelection").text() != "Raycast error.") {
-				$("#guiSelection").text("Raycast error.");
-			}
-
-		break;
-	}
-	// CONTINUE console.log("Intersects[0]"intersects[i].object.name intersects[i].object.type)
 	/*
-	for (var i = 0; i < intersects.length; i++) {
-		// OK console.log("intersects[i].object.name: " + intersects[i].object.name);
-		// REVISIT $("#container").text("Tetrahedron 1").css({ "color" : "gray"});
-		//$("#geometryName").css({"color" : "white"});
-	}
-	/*
-		Convert to switch
-	* /
-	if (intersects.length > 0) {
-		// OK console.log("Mouse over " + intersects[0].object.name);
-		console.log("Mouse raycast intersect.");
-		if ($("#guiSelection").text() != "Tetrahedron") {
-			$("#guiSelection").text("Tetrahedron"); //.css({"color" : "gray", "position" : "fixed" , "top" : "10px" , "z-index" : "100"});
-		}
-	} else {
-		if ($("#guiSelection").text() != "Waiting...") {
-			$("#guiSelection").text("Waiting...");
-		}
-	}
+		To replace what is below
 	*/
+	for (var i = 0 ; i < raycastTargets.length; i++) {
+		var testSubject = raycastTargets[i];
+		intersects = raycaster.intersectObject( testSubject );
+		switch (intersects.length) {
+			case 0:
+				//if ($("#guiSelection").text() != "Waiting...") {
+				//	$("#guiSelection").text("Waiting...");
+				//}
+
+			break;
+			case 1:
+				console.log("In render, intersects.length is 1, and testSubject is: " + testSubject.name);
+				//console.log("intersects[0]: " + typeof 4);
+				if ($("#guiSelection").text() != testSubject.name ) { 	//"[[target.name]]"
+					$("#guiSelection").text(testSubject.name);								// "[[target.name]]"
+					testahedron = testSubject; // User indicates the selected solid.
+				}
+
+			break;
+			default:
+				if ($("#guiSelection").text() != "Raycast error.") {
+					$("#guiSelection").text("Raycast error.");
+				}
+
+			break;
+		}
+
+	}
+
 	updateGUI();
 
 	renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
@@ -158,12 +138,6 @@ function onWindowResize(event) {
 }
 
 function updateGUI() {
-	/*
-	if (fire > 0) {
-		fire--;
-		console.log("div.rotationLabel text: " + $("#rotationLabel").text() + " on updateGUI.");
-	}
-	*/
 	if ($("#showMoreButton").attr("value") == "Less <") {
 		// OK console.log("updateGUI allowed. Rotation: " + printV3(tetrahedron.rotation));
 		// console.log("Rotation label text: " + $("div.rotationLabel").text() + " in jQuery when Less <");
@@ -226,8 +200,9 @@ function addPlatonicSolid() {
 	mesh.name = geo.name;
 	scene.add(mesh);
 	console.log("addPlatonicSolid() geoPosition: " + printV3(geoPosition) + ". geo.name: " + geo.name + ", geo.type: " + geo.type );
-	console.log("addPlatonicSolid() mesh.position: " + printV3(mesh.position) + ", .name: " + mesh.name + ", mesh.type: " + mesh.type );
+	console.log("addPlatonicSolid() mesh.position: " + printV3(mesh.position) + ", mesh.name: " + mesh.name + ", mesh.type: " + mesh.type );
 	addIndex = (addIndex + 1) % 5;
+	raycastTargets.push(mesh);
 	return mesh;
 }
 
@@ -266,7 +241,7 @@ $(function() {
 		});
 	$("#addPlatonicSolidButton").click(function() {
 		console.log("addPlatonicSolidButton clicked!");
-		addPlatonicSolid();
+		testahedron = addPlatonicSolid();
 	})
 	console.log("div.rotationLabel text: " + $("#rotationLabel").text() + " at end of jQuery.");
 	console.log("End of jQuery reached.");
