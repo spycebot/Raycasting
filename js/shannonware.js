@@ -45,8 +45,11 @@ function init() {
 		Renderer at the end if function init.
 	*/
 	renderer = new THREE.WebGLRenderer();
+	updateRenderer();
+	/*
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
+	*/
 	container.appendChild( renderer.domElement );
 	raycaster = new THREE.Raycaster();
 	mouse = new THREE.Vector2();
@@ -60,10 +63,14 @@ function init() {
 
 function animate() {
 	testahedron.rotation.x += 0.01;
+	//var t = 0.1 ;
+	//camera.quaternion.slerp(testahedron.quaternion,t); //t = normalized value 0 to 1
+
 }
 
 function render() {
 	requestAnimationFrame( render );
+	//TWEEN.update();
 	animate();
 	raycaster.setFromCamera( mouse, camera );
 	// TypeError: object.raycast is not a function
@@ -86,7 +93,7 @@ function render() {
 				if ($("#guiSelection").text() != testSubject.name ) { 	//"[[target.name]]"
 					$("#guiSelection").text(testSubject.name);								// "[[target.name]]"
 					testahedron = testSubject; // User indicates the selected solid.
-					camera.lookAt(testahedron.position);
+					//camera.lookAt(testahedron.position);
 				}
 
 			break;
@@ -101,14 +108,22 @@ function render() {
 	}
 
 	updateGUI();
+	rotateCameraToObject(testahedron, 1);
 
 	renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
 	renderer.render( scene, camera );
 	
 }
 
+function updateRenderer() {
+	aspect = 1;
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	console.log("updateCameras complete.");
+}
+
 function printV3(target) {
-	var returnString = "(" + target.x.toFixed(2) + ", " + target.y.toFixed(2) + ", " + target.z.toFixed(2) + ")";
+	var returnString = "(" + target.x.toFixed(0) + ", " + target.y.toFixed(0) + ", " + target.z.toFixed(0) + ")";
 	return returnString;
 }
 
@@ -130,11 +145,8 @@ function onDocumentMouseMove( event ) {
 function onWindowResize(event) {
 	//SCREEN_WIDTH = window.innerWidth;
 	//SCREEN_HEIGHT = window.innerHeight;
-	aspect = 1;
 	recalculateGUI();
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	updateCameras();
+	updateRenderer();
 	console.log("onWindowResize complete.") ;
 }
 
@@ -208,17 +220,64 @@ function addPlatonicSolid() {
 
 function removePlatonicSolid() {
 	var removeTarget;
-	if (raycastTargets.length > 0) {
-		removeTarget = raycastTargets.shift();
-		console.log("In removePlatonicSolid, removeTarget.name: " + removeTarget.name);
-		scene.remove(removeTarget);
-	} else console.log("In removePlatonicSolid, no target to remove :0)");
+	removeTarget = raycastTargets.shift();
+	console.log("In removePlatonicSolid, removeTarget.name: " + removeTarget.name);
+	scene.remove(removeTarget);
 }
 
 function recalculateGUI() {
-	$("body").css({"font-size" : (window.innerWidth + window.innerHeight)/40});
-	$("input").css({"font-size" : (window.innerWidth + window.innerHeight)/20, "height" : "40px"}); //??!!
+	var bodyFontFormula = (window.innerWidth + window.innerHeight)/50;
+	var inputFontFormula = (window.innerWidth + window.innerHeight)/40;
+	console.log("recalculateGUI window.innerWidth: " + window.innerWidth + ", window.innerHeight: " + window.innerHeight + ", total: " + (window.innerWidth + window.innerHeight));
+	console.log("recalculateGUI bodyFontFormula: " + bodyFontFormula + ", inputFontFormula: " + inputFontFormula); // + ", total: " + (window.innerWidth + window.innerHeight));
+	$("body").css({"font-size" : bodyFontFormula});
+	$("input").css({"font-size" : inputFontFormula}); //, "height" : inputFontFormula}); //??!!
 
+}
+
+/*
+	http://stackoverflow.com/questions/32723678/threejs-smoothly-rotate-camera-towards-an-object
+*/
+function rotateCameraToObject(object3D, time) {
+
+	// camera original position
+	var cameraPosition = camera.position.clone();
+
+	// object3D position
+	var objectPosition = object3D.position.clone();
+
+	// direction vector from camera towards object3D
+	var direction = objectPosition.sub(cameraPosition);
+
+	// compute Euler angle
+	var angle = new THREE.Euler();
+	angle.setFromVector3(direction);
+
+
+	/*
+	 * tween stuff    
+	 */
+	var start = {
+	    x: camera.rotation.clone().x,
+	    y: camera.rotation.clone().y,
+	    z: camera.rotation.clone().z,
+	}
+
+	var end = {
+	    x: angle._x,
+	    y: angle._y,
+	    z: angle._z,
+	}
+
+	var tween = new TWEEN.Tween(start).to(end, time);
+
+	tween.onUpdate(function() {
+	    camera.rotation.y = start.x;
+	    camera.rotation.y = start.y;
+	    camera.rotation.y = start.z;
+	});
+
+	tween.start();    
 }
 
 try {
@@ -232,7 +291,6 @@ try {
 }
 
 $(function() {
-	recalculateGUI();
 	$("#guiRoot").text(" ")
 		.append("<div id=\"guiSelection\">Waiting...</div>")
 		.append("<input type=\"button\" value=\"More >\" id=\"showMoreButton\" />")
@@ -240,6 +298,7 @@ $(function() {
 		/*.append("")
 		.append("")*/
 		.append("\n</div>"); // <-- must always be the last thing in moreGroup"); 
+	recalculateGUI();
 	$("#moreGroup").hide();
 	$("#showMoreButton").click(function() {
 			//console.log("showMoreButton clicked! Value: " + $("#showMoreButton").attr("value"));
@@ -250,13 +309,17 @@ $(function() {
 		});
 	$("#addPlatonicSolidButton").click(function() {
 		console.log("addPlatonicSolidButton clicked!");
-		testahedron = addPlatonicSolid();
-		camera.position.z = (raycastTargets.length * 5) + 30;
+		if (raycastTargets.length < 5) {
+			testahedron = addPlatonicSolid();
+			camera.position.z = (raycastTargets.length * 5) + 30;
+		} else console.log("In addPlatonicSolidButton.click, too many objects :0)");
 	})
 	$("#removePlatonicSolidButton").click(function() {
 		console.log("removePlatonicSolidButton clicked!");
-		removePlatonicSolid();
-		camera.position.z = (raycastTargets.length * 5) + 30;
+		if (raycastTargets.length > 0) {
+			removePlatonicSolid();
+			camera.position.z = (raycastTargets.length * 5) + 30;
+		} else console.log("In removePlatonicSolidButton.click, no target to remove :0)");
 	})
 	console.log("div.rotationLabel text: " + $("#rotationLabel").text() + " at end of jQuery.");
 	console.log("End of jQuery reached.");
