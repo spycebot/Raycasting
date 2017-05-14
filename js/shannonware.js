@@ -27,7 +27,7 @@ function init() {
 	scene.add( ambientLight );
 	scene.add( light );
 	var testGeometry = new THREE.TetrahedronGeometry(10);
-	var material = new THREE.MeshLambertMaterial( { color: 0xffffff , wireframe: false }); //0x00ff00 } );
+	var material = new THREE.MeshLambertMaterial( { color: 0xffffff , wireframe: true }); //0x00ff00 } );
 	//var ka = 0.2;
 	//material.ambient.setRGB(material.color.r * ka, material.color.g * ka, material.color.b * ka );
 	material.ambient = new THREE.Color(0.5, 0.5, 0.5);
@@ -45,6 +45,7 @@ function init() {
 		Renderer at the end if function init.
 	*/
 	renderer = new THREE.WebGLRenderer();
+	renderer.setClearColor( 0xffffff, 0 );
 	updateRenderer();
 	/*
 	renderer.setPixelRatio( window.devicePixelRatio );
@@ -55,6 +56,14 @@ function init() {
 	mouse = new THREE.Vector2();
 	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 	document.body.addEventListener('touchstart', function(e){
+		e.preventDefault();
+		mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+		mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+		raycastScene();
+		//alert(e.changedTouches[0].pageX) // alert pageX coordinate of touch point
+		// REVISIT $("#container").add("<div id=\"geometryName\">Tetrahedron</div>");
+	}, false);
+	document.body.addEventListener('touchmove', function(e){
 		//alert(e.changedTouches[0].pageX) // alert pageX coordinate of touch point
 		// REVISIT $("#container").add("<div id=\"geometryName\">Tetrahedron</div>");
 	}, false);
@@ -72,43 +81,11 @@ function render() {
 	requestAnimationFrame( render );
 	//TWEEN.update();
 	animate();
-	raycaster.setFromCamera( mouse, camera );
-	// TypeError: object.raycast is not a function
-	/*
-		To replace what is below
-	*/
-	for (var i = 0 ; i < raycastTargets.length; i++) {
-		var testSubject = raycastTargets[i];
-		intersects = raycaster.intersectObject( testSubject );
-		switch (intersects.length) {
-			case 0:
-				//if ($("#guiSelection").text() != "Waiting...") {
-				//	$("#guiSelection").text("Waiting...");
-				//}
 
-			break;
-			case 1:
-				console.log("In render, intersects.length is 1, and testSubject is: " + testSubject.name);
-				//console.log("intersects[0]: " + typeof 4);
-				if ($("#guiSelection").text() != testSubject.name ) { 	//"[[target.name]]"
-					$("#guiSelection").text(testSubject.name);								// "[[target.name]]"
-					testahedron = testSubject; // User indicates the selected solid.
-					//camera.lookAt(testahedron.position);
-				}
-
-			break;
-			default:
-				if ($("#guiSelection").text() != "Raycast error.") {
-					$("#guiSelection").text("Raycast error.");
-				}
-
-			break;
-		}
-
-	}
+	raycastScene();
 
 	updateGUI();
-	rotateCameraToObject(testahedron, 1);
+	//rotateCameraToObject(testahedron, 1);
 
 	renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
 	renderer.render( scene, camera );
@@ -235,9 +212,49 @@ function recalculateGUI() {
 
 }
 
+function raycastScene() {
+	var foundObject;
+	raycaster.setFromCamera( mouse, camera );
+	// TypeError: object.raycast is not a function
+	/*
+		To replace what is below
+	*/
+	for (var i = 0 ; i < raycastTargets.length; i++) {
+		var testSubject = raycastTargets[i];
+		intersects = raycaster.intersectObject( testSubject );
+		switch (intersects.length) {
+			case 0:
+				//if ($("#guiSelection").text() != "Waiting...") {
+				//	$("#guiSelection").text("Waiting...");
+				//}
+
+			break;
+			case 1:
+				console.log("In render, intersects.length is 1, and testSubject is: " + testSubject.name);
+				//console.log("intersects[0]: " + typeof 4);
+				if ($("#guiSelection").text() != testSubject.name ) { 	//"[[target.name]]"
+					$("#guiSelection").text(testSubject.name);								// "[[target.name]]"
+					foundObject = testahedron = testSubject; // User indicates the selected solid.
+					//camera.lookAt(testahedron.position);
+				}
+
+			break;
+			default:
+				if ($("#guiSelection").text() != "Raycast error.") {
+					$("#guiSelection").text("Raycast error.");
+				}
+
+			break;
+		}
+
+	}
+
+	return foundObject;
+}
+
 /*
 	http://stackoverflow.com/questions/32723678/threejs-smoothly-rotate-camera-towards-an-object
-*/
+*
 function rotateCameraToObject(object3D, time) {
 
 	// camera original position
@@ -256,7 +273,7 @@ function rotateCameraToObject(object3D, time) {
 
 	/*
 	 * tween stuff    
-	 */
+	 * /
 	var start = {
 	    x: camera.rotation.clone().x,
 	    y: camera.rotation.clone().y,
@@ -279,6 +296,7 @@ function rotateCameraToObject(object3D, time) {
 
 	tween.start();    
 }
+*/
 
 try {
 	init();
