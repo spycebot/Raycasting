@@ -1,15 +1,12 @@
 /*
 	JavaScript for Raycasting Exercise
 	09 May 2017
+	Updated 15 May 2017: Add touch tracking
 */
 
-var renderer, scene, camera; /* stats;
-var particles, uniforms;
-var PARTICLE_SIZE = 20; */
+var renderer, scene, camera; 
 var raycaster, intersects;
 var mouse, INTERSECTED;
-//var showTetrahedronLabel = false;
-//var fire = 3 ;
 var testahedron;
 var raycastTargets = new Array();//tetrahedron;
 var addIndex, removeIndex;
@@ -26,16 +23,13 @@ function init() {
 	light.position.set( -800, 900, 300 );
 	scene.add( ambientLight );
 	scene.add( light );
-	var testGeometry = new THREE.TetrahedronGeometry(10);
-	var material = new THREE.MeshLambertMaterial( { color: 0xffffff , wireframe: true }); //0x00ff00 } );
-	//var ka = 0.2;
-	//material.ambient.setRGB(material.color.r * ka, material.color.g * ka, material.color.b * ka );
-	material.ambient = new THREE.Color(0.5, 0.5, 0.5);
+
 	/*
-	tetrahedron = new THREE.Mesh( testGeometry, material );
-	tetrahedron.name = "Pauling" + Date();
-	scene.add( tetrahedron );
+	var testGeometry = new THREE.TetrahedronGeometry(10);
+	var material = new THREE.MeshLambertMaterial( { color: 0xff0000 , wireframe: true }); //0x00ff00 } );
+	material.ambient = new THREE.Color(0.5, 0.5, 0.5);
 	*/
+
 	addIndex = 0;
 	testahedron = addPlatonicSolid();
 	console.log("init() testahedron.name: " + testahedron.name);
@@ -44,13 +38,9 @@ function init() {
 	/*
 		Renderer at the end if function init.
 	*/
-	renderer = new THREE.WebGLRenderer();
+	renderer = new THREE.WebGLRenderer({ alpha: true });
 	renderer.setClearColor( 0xffffff, 0 );
 	updateRenderer();
-	/*
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	*/
 	container.appendChild( renderer.domElement );
 	raycaster = new THREE.Raycaster();
 	mouse = new THREE.Vector2();
@@ -64,6 +54,10 @@ function init() {
 		// REVISIT $("#container").add("<div id=\"geometryName\">Tetrahedron</div>");
 	}, false);
 	document.body.addEventListener('touchmove', function(e){
+		e.preventDefault();
+		mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+		mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+		raycastScene();
 		//alert(e.changedTouches[0].pageX) // alert pageX coordinate of touch point
 		// REVISIT $("#container").add("<div id=\"geometryName\">Tetrahedron</div>");
 	}, false);
@@ -79,7 +73,6 @@ function animate() {
 
 function render() {
 	requestAnimationFrame( render );
-	//TWEEN.update();
 	animate();
 
 	raycastScene();
@@ -94,8 +87,9 @@ function render() {
 
 function updateRenderer() {
 	aspect = 1;
-	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setPixelRatio( aspect ); //window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
+	camera.updateProjectionMatrix();
 	console.log("updateCameras complete.");
 }
 
@@ -139,6 +133,7 @@ function updateGUI() {
 
 function addPlatonicSolid() {
 	var material = new THREE.MeshLambertMaterial( { color: 0xffffff , wireframe: false });
+	//var material = new THREE.MeshBasicMaterial( { color: 0xffffff , wireframe: false });
 	var geo, mesh;
 	var geoPosition = new THREE.Vector3(0, 0, 0);
 	material.ambient = new THREE.Color(0.5, 0.5, 0.5);
@@ -188,8 +183,8 @@ function addPlatonicSolid() {
 	mesh.position.y = geoPosition.y ;
 	mesh.name = geo.name;
 	scene.add(mesh);
-	console.log("addPlatonicSolid() geoPosition: " + printV3(geoPosition) + ". geo.name: " + geo.name + ", geo.type: " + geo.type );
-	console.log("addPlatonicSolid() mesh.position: " + printV3(mesh.position) + ", mesh.name: " + mesh.name + ", mesh.type: " + mesh.type );
+	//console.log("addPlatonicSolid() geoPosition: " + printV3(geoPosition) + ". geo.name: " + geo.name + ", geo.type: " + geo.type );
+	//console.log("addPlatonicSolid() mesh.position: " + printV3(mesh.position) + ", mesh.name: " + mesh.name + ", mesh.type: " + mesh.type );
 	addIndex = (addIndex + 1) % 5;
 	raycastTargets.push(mesh);
 	return mesh;
@@ -198,18 +193,20 @@ function addPlatonicSolid() {
 function removePlatonicSolid() {
 	var removeTarget;
 	removeTarget = raycastTargets.shift();
-	console.log("In removePlatonicSolid, removeTarget.name: " + removeTarget.name);
+	// console.log("In removePlatonicSolid, removeTarget.name: " + removeTarget.name);
 	scene.remove(removeTarget);
 }
 
 function recalculateGUI() {
 	var bodyFontFormula = (window.innerWidth + window.innerHeight)/50;
 	var inputFontFormula = (window.innerWidth + window.innerHeight)/40;
-	console.log("recalculateGUI window.innerWidth: " + window.innerWidth + ", window.innerHeight: " + window.innerHeight + ", total: " + (window.innerWidth + window.innerHeight));
-	console.log("recalculateGUI bodyFontFormula: " + bodyFontFormula + ", inputFontFormula: " + inputFontFormula); // + ", total: " + (window.innerWidth + window.innerHeight));
+	var fixedBFF = bodyFontFormula.toFixed(0); // even fixedBFF.toString() interrupts GUI modification
+	var fixedIFF = inputFontFormula.toFixed(0);
+	//console.log("recalculateGUI window.innerWidth: " + window.innerWidth + ", window.innerHeight: " + window.innerHeight + ", total: " + (window.innerWidth + window.innerHeight));
+	//console.log("recalculateGUI bodyFontFormula: " + bodyFontFormula + ", inputFontFormula: " + inputFontFormula + ", fixedBFF: " + fixedBFF);
 	$("body").css({"font-size" : bodyFontFormula});
 	$("input").css({"font-size" : inputFontFormula}); //, "height" : inputFontFormula}); //??!!
-
+	console.log("recalculateGUI() complete.");
 }
 
 function raycastScene() {
@@ -230,7 +227,7 @@ function raycastScene() {
 
 			break;
 			case 1:
-				console.log("In render, intersects.length is 1, and testSubject is: " + testSubject.name);
+				//console.log("In raycastScene, intersects.length is 1, and testSubject is: " + testSubject.name);
 				//console.log("intersects[0]: " + typeof 4);
 				if ($("#guiSelection").text() != testSubject.name ) { 	//"[[target.name]]"
 					$("#guiSelection").text(testSubject.name);								// "[[target.name]]"
@@ -251,52 +248,6 @@ function raycastScene() {
 
 	return foundObject;
 }
-
-/*
-	http://stackoverflow.com/questions/32723678/threejs-smoothly-rotate-camera-towards-an-object
-*
-function rotateCameraToObject(object3D, time) {
-
-	// camera original position
-	var cameraPosition = camera.position.clone();
-
-	// object3D position
-	var objectPosition = object3D.position.clone();
-
-	// direction vector from camera towards object3D
-	var direction = objectPosition.sub(cameraPosition);
-
-	// compute Euler angle
-	var angle = new THREE.Euler();
-	angle.setFromVector3(direction);
-
-
-	/*
-	 * tween stuff    
-	 * /
-	var start = {
-	    x: camera.rotation.clone().x,
-	    y: camera.rotation.clone().y,
-	    z: camera.rotation.clone().z,
-	}
-
-	var end = {
-	    x: angle._x,
-	    y: angle._y,
-	    z: angle._z,
-	}
-
-	var tween = new TWEEN.Tween(start).to(end, time);
-
-	tween.onUpdate(function() {
-	    camera.rotation.y = start.x;
-	    camera.rotation.y = start.y;
-	    camera.rotation.y = start.z;
-	});
-
-	tween.start();    
-}
-*/
 
 try {
 	init();
